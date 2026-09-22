@@ -93,10 +93,17 @@ final class ScriptedWidget: Identifiable {
         }
     }
 
-    func renderIfNeeded(now: Date = .now) {
+    /// `span` is the cell the board is drawing right now — a live resize, or
+    /// a packed fit — not only the last size written to settings. The ticker
+    /// has to keep that live cell; falling back to settings mid-drag would
+    /// draw a 2-row player back into a 1-row tile until the drop commits.
+    func renderIfNeeded(now: Date = .now, span override: WidgetSpan? = nil) {
         guard failure == nil else { return }
 
-        let resolved = settings?.span(for: id, declared: span) ?? span
+        let resolved = override
+            ?? lastRenderedSpan
+            ?? settings?.span(for: id, declared: span)
+            ?? span
         let isFirstRender = node == nil
         let isDue = refresh > 0 && now.timeIntervalSince(lastRender) >= refresh
         let spanChanged = lastRenderedSpan != resolved
@@ -123,7 +130,6 @@ final class ScriptedWidget: Identifiable {
 
     func forceRender() {
         lastRender = .distantPast
-        lastRenderedSpan = nil
         renderIfNeeded()
         islandIfNeeded(now: .now, context: lastIslandContext ?? .zero, force: true)
     }

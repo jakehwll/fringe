@@ -541,6 +541,85 @@ struct ScriptRenderContextTests {
     }
 }
 
+@Suite("Board render cadence")
+@MainActor
+struct BoardRenderCadenceTests {
+    private func makeWidget(_ source: String, settings: NotchSettings? = nil) throws -> ScriptedWidget {
+        let folder = FileManager.default.temporaryDirectory
+            .appending(path: "FringeTests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let url = folder.appending(path: "probe.js")
+        try source.write(to: url, atomically: true, encoding: .utf8)
+        return ScriptedWidget(url: url, settings: settings, dataRoot: folder.appending(path: "data"))
+    }
+
+    private func textValue(_ widget: ScriptedWidget) -> String? {
+        guard case .text(let text) = widget.node else { return nil }
+        return text.value
+    }
+
+    private let spanProbe = """
+        widget({
+          name: "Probe",
+          span: [3, 2],
+          refresh: 60,
+          render: function (ctx) {
+            return text(String(ctx.rows) + "x" + String(ctx.columns));
+          }
+        });
+        """
+
+    @Test("A live cell resize rerenders immediately, even before settings commit")
+    func liveCellResizeSkipsTheTick() throws {
+        let settings = NotchSettings(defaults: scratchDefaults())
+        let probe = try makeWidget(spanProbe, settings: settings)
+        let t0 = Date()
+
+        probe.renderIfNeeded(now: t0)
+        #expect(textValue(probe) == "2x3")
+
+        settings.setSpan(WidgetSpan(columns: 3, rows: 2), for: probe.id)
+        probe.renderIfNeeded(now: t0.addingTimeInterval(1), span: WidgetSpan(columns: 1, rows: 1))
+        #expect(textValue(probe) == "1x1")
+    }
+
+    @Test("A later tick keeps the live cell instead of reverting to settings")
+    func tickDoesNotRevertLiveSpan() throws {
+        let settings = NotchSettings(defaults: scratchDefaults())
+        let probe = try makeWidget(spanProbe, settings: settings)
+        let t0 = Date()
+
+        probe.renderIfNeeded(now: t0)
+        settings.setSpan(WidgetSpan(columns: 3, rows: 2), for: probe.id)
+        probe.renderIfNeeded(now: t0.addingTimeInterval(1), span: WidgetSpan(columns: 1, rows: 1))
+        #expect(textValue(probe) == "1x1")
+
+        probe.renderIfNeeded(now: t0.addingTimeInterval(61))
+        #expect(textValue(probe) == "1x1")
+    }
+
+    @Test("refresh 0 still rerenders when the cell changes")
+    func staticWidgetRerendersOnResize() throws {
+        let probe = try makeWidget("""
+            widget({
+              name: "Probe",
+              span: [2, 2],
+              refresh: 0,
+              render: function (ctx) {
+                return text(String(ctx.rows) + "x" + String(ctx.columns));
+              }
+            });
+            """)
+        let t0 = Date()
+
+        probe.renderIfNeeded(now: t0)
+        #expect(textValue(probe) == "2x2")
+
+        probe.renderIfNeeded(now: t0.addingTimeInterval(30), span: WidgetSpan(columns: 3, rows: 1))
+        #expect(textValue(probe) == "1x3")
+    }
+}
+
 @Suite("Island cadence")
 @MainActor
 struct IslandCadenceTests {

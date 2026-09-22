@@ -345,6 +345,7 @@ final class NotchWindowController {
         guard next.columns != settings.columns || next.rows != settings.rows else { return }
         settings.columns = next.columns
         settings.rows = next.rows
+        library.render(placements: BoardArrangement(settings: settings, library: library).placements)
     }
 
     private func endPanelResize() {
@@ -447,6 +448,9 @@ final class NotchWindowController {
 
         if landingChanged {
             session.landing = landing
+            if session.kind == .resize, let next = landing {
+                library.render(id: session.widgetID, span: next.span)
+            }
             withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
                 state.arrange = session
             }

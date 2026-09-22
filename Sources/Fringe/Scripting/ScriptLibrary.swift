@@ -91,6 +91,21 @@ final class ScriptLibrary {
         NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: folder.path)
     }
 
+    /// Draw this tile for the cell the board is about to show. Called before
+    /// the landing is published so the tree and the frame change together.
+    func render(id: String, span: WidgetSpan) {
+        widgets.first { $0.id == id }?.renderIfNeeded(span: span)
+    }
+
+    /// Same, for every placement — a panel resize can shrink several tiles
+    /// at once when packing has to fit them again.
+    func render(placements: [String: WidgetPlacement]) {
+        for widget in widgets {
+            guard let span = placements[widget.id]?.span else { continue }
+            widget.renderIfNeeded(span: span)
+        }
+    }
+
     // MARK: - Private
 
     private func tick() {

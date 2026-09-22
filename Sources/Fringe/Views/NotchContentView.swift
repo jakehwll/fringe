@@ -139,6 +139,7 @@ struct NotchContentView: View {
         return ScriptedWidgetView(
             widget: widget,
             span: placement?.span ?? widget.span,
+            snapsLayout: isResizing,
             context: WidgetRenderContext.nowPlaying(
                 nowPlaying,
                 artwork: widget.permissions.media,
@@ -201,6 +202,11 @@ struct NotchContentView: View {
             }
             .offset(isPlaceSettle ? session?.translation ?? .zero : .zero)
             .zIndex(isPlaceSettle ? 1 : 0)
+            // The cell the pointer just committed snaps with its tree.
+            // Neighbours still spring via the board's placement animation.
+            .transaction { transaction in
+                if isResizing { transaction.disablesAnimations = true }
+            }
             .animation(.spring(response: 0.26, dampingFraction: 0.7), value: isHovered)
             .animation(.spring(response: 0.22, dampingFraction: 0.7), value: isGripped)
             .animation(.spring(response: 0.22, dampingFraction: 0.7), value: showGrip)
@@ -285,6 +291,9 @@ struct WidgetDragPreview: View {
 struct ScriptedWidgetView: View {
     let widget: ScriptedWidget
     var span: WidgetSpan = .small
+    /// Tile is mid-resize: skip the tree fade so a layout swap is not
+    /// interpolated on top of the cell snap.
+    var snapsLayout = false
     var context: WidgetRenderContext = .inert
 
     var body: some View {
@@ -318,13 +327,15 @@ struct ScriptedWidgetView: View {
         .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         // `WidgetNode` is Equatable, so animating on the tree itself covers
         // every change a script can make — text, layout, spans — in one place.
-        .animation(.smooth(duration: 0.3), value: widget.node)
+        // Resize snaps: morphing a 2-row player into a strip is the jank.
+        .animation(snapsLayout ? nil : .smooth(duration: 0.3), value: widget.node)
         .animation(.easeInOut(duration: 0.35), value: context.artworkID)
         // The ticker only asks scripts to render on their refresh interval.
         // A resize has to take effect on the same frame the cell changes,
         // otherwise a 2-row player stays stacked inside a 1-row tile.
-        .onChange(of: span) { _, _ in
-            widget.renderIfNeeded()
+        // `initial` covers a packed fit on first appear, before any tick.
+        .onChange(of: span, initial: true) { _, newSpan in
+            widget.renderIfNeeded(span: newSpan)
         }
     }
 }
