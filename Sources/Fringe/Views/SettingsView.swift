@@ -1,4 +1,5 @@
 import AppKit
+import LaunchAtLogin
 import SwiftUI
 
 /// Content of the preference window. The toolbar that switches panes lives on
@@ -44,6 +45,15 @@ private struct GeneralSettingsPane: View {
                 Text("""
                     Measured from the display. On a Mac without a cutout \
                     the notch is drawn at a standard size instead.
+                    """)
+            }
+
+            Section {
+                LaunchAtLogin.Toggle()
+            } footer: {
+                Text("""
+                    Opens Fringe when you log in. The app has no Dock icon, \
+                    so this is how it comes back after a restart.
                     """)
             }
 

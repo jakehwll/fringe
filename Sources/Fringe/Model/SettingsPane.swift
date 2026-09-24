@@ -32,7 +32,7 @@ enum SettingsPane: String, CaseIterable, Identifiable, Sendable {
     /// switch tabs; they do not scroll a single giant form.
     var contentHeight: CGFloat {
         switch self {
-        case .general: 228
+        case .general: 320
         case .grid: 312
         case .widgets: 500
         case .debug: 420
