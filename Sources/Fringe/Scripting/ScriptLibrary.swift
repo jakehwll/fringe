@@ -140,7 +140,7 @@ final class ScriptLibrary {
         }
         let next = IslandOccupancy.resolve(
             from: widgets.map {
-                (
+                IslandCandidate(
                     id: $0.id,
                     enabled: settings?.isEnabled($0.id) ?? true,
                     claim: $0.islandClaim

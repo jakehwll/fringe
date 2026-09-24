@@ -117,9 +117,10 @@ final class ScriptedWidget: Identifiable {
         } catch ScriptError.timedOut(let budget) {
             strikes += 1
             guard strikes >= Self.allowedStrikes else {
-                Logger.scripts.notice(
-                    "\(self.id, privacy: .public): overran \(Int(budget * 1000))ms budget (\(self.strikes)/\(Self.allowedStrikes))"
-                )
+                Logger.scripts.notice("""
+                    \(self.id, privacy: .public): overran \(Int(budget * 1000))ms \
+                    budget (\(self.strikes)/\(Self.allowedStrikes))
+                    """)
                 return
             }
             stop(ScriptError.timedOut(budget))

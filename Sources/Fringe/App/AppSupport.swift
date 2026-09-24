@@ -8,18 +8,18 @@ enum AppSupport {
     private static let legacyName = "NotchApp"
 
     static func folder(_ leaf: String) -> URL {
-        let fm = FileManager.default
-        let support = fm.homeDirectoryForCurrentUser
+        let files = FileManager.default
+        let support = files.homeDirectoryForCurrentUser
             .appending(path: "Library/Application Support")
         let current = support.appending(path: name).appending(path: leaf)
         let legacy = support.appending(path: legacyName).appending(path: leaf)
-        if !fm.fileExists(atPath: current.path),
-           fm.fileExists(atPath: legacy.path) {
-            try? fm.createDirectory(
+        if !files.fileExists(atPath: current.path),
+           files.fileExists(atPath: legacy.path) {
+            try? files.createDirectory(
                 at: current.deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )
-            try? fm.moveItem(at: legacy, to: current)
+            try? files.moveItem(at: legacy, to: current)
         }
         return current
     }

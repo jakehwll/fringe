@@ -113,7 +113,7 @@ struct BoardCoordinateTests {
         CGPoint(x: 120, y: 40),
         CGPoint(x: 491, y: 155),
         CGPoint(x: -30, y: -12),
-        CGPoint(x: 1000, y: 900),
+        CGPoint(x: 1000, y: 900)
     ])
     func roundTrip(board: CGPoint) {
         let screen = geometry.screenPoint(from: board)
@@ -195,7 +195,7 @@ struct BoardHitTestTests {
             grid: grid,
             placements: [
                 "left": WidgetPlacement(slot: GridSlot(column: 0, row: 0), span: .small),
-                "big": WidgetPlacement(slot: GridSlot(column: 2, row: 0), span: .large),
+                "big": WidgetPlacement(slot: GridSlot(column: 2, row: 0), span: .large)
             ]
         )
     }

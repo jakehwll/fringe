@@ -4,7 +4,7 @@ import Testing
 @testable import Fringe
 
 /// A 6×2 board of 72pt cells with 12pt gutters — the shipping default.
-private let board = NotchGrid(columns: 6, rows: 2, cellSize: 72, spacing: 12)
+let board = NotchGrid(columns: 6, rows: 2, cellSize: 72, spacing: 12)
 
 @Suite("Grid measurement")
 struct GridMeasurementTests {
@@ -129,14 +129,17 @@ struct PointToCellTests {
         let rangeC = 3...10
         let rangeR = 1...4
         let half = stride / 2
+        func grown(by translation: CGSize) -> (columns: Int, rows: Int) {
+            board.grown(from: 6, rows: 2, by: translation, columnRange: rangeC, rowRange: rangeR)
+        }
 
-        #expect(board.grown(from: 6, rows: 2, by: .zero, columnRange: rangeC, rowRange: rangeR) == (6, 2))
+        #expect(grown(by: .zero) == (6, 2))
         // The dragged edge only travels half a cell per column.
-        #expect(board.grown(from: 6, rows: 2, by: CGSize(width: half / 2 - 1, height: 0), columnRange: rangeC, rowRange: rangeR) == (6, 2))
-        #expect(board.grown(from: 6, rows: 2, by: CGSize(width: half / 2, height: 0), columnRange: rangeC, rowRange: rangeR) == (7, 2))
-        #expect(board.grown(from: 6, rows: 2, by: CGSize(width: 0, height: half), columnRange: rangeC, rowRange: rangeR) == (6, 3))
-        #expect(board.grown(from: 6, rows: 2, by: CGSize(width: -9_000, height: -9_000), columnRange: rangeC, rowRange: rangeR) == (3, 1))
-        #expect(board.grown(from: 6, rows: 2, by: CGSize(width: 9_000, height: 9_000), columnRange: rangeC, rowRange: rangeR) == (10, 4))
+        #expect(grown(by: CGSize(width: half / 2 - 1, height: 0)) == (6, 2))
+        #expect(grown(by: CGSize(width: half / 2, height: 0)) == (7, 2))
+        #expect(grown(by: CGSize(width: 0, height: half)) == (6, 3))
+        #expect(grown(by: CGSize(width: -9_000, height: -9_000)) == (3, 1))
+        #expect(grown(by: CGSize(width: 9_000, height: 9_000)) == (10, 4))
     }
 }
 
@@ -151,7 +154,7 @@ struct GridPackingTests {
         let placed = board.arrange([
             request("a", .small),
             request("b", .small),
-            request("c", .small),
+            request("c", .small)
         ])
 
         #expect(placed["a"]?.slot == GridSlot(column: 0, row: 0))
@@ -171,7 +174,7 @@ struct GridPackingTests {
     func honoursExplicitPosition() {
         let placed = board.arrange([
             request("pinned", .small, at: GridSlot(column: 4, row: 1)),
-            request("packed", .small),
+            request("packed", .small)
         ])
 
         #expect(placed["pinned"]?.slot == GridSlot(column: 4, row: 1))
@@ -185,7 +188,7 @@ struct GridPackingTests {
     func packsAroundPinned() {
         let placed = board.arrange([
             request("packed", .small),
-            request("pinned", .small, at: GridSlot(column: 1, row: 0)),
+            request("pinned", .small, at: GridSlot(column: 1, row: 0))
         ])
 
         #expect(placed["pinned"]?.slot == GridSlot(column: 1, row: 0))
@@ -197,12 +200,12 @@ struct GridPackingTests {
         let pinnedFirst = board.arrange([
             request("pinned", .small, at: GridSlot(column: 3, row: 0)),
             request("a", .small),
-            request("b", .small),
+            request("b", .small)
         ])
         let pinnedLast = board.arrange([
             request("a", .small),
             request("b", .small),
-            request("pinned", .small, at: GridSlot(column: 3, row: 0)),
+            request("pinned", .small, at: GridSlot(column: 3, row: 0))
         ])
 
         #expect(pinnedFirst == pinnedLast)
@@ -221,7 +224,7 @@ struct GridPackingTests {
     func overflowShrinksToFit() {
         let placed = board.arrange([
             request("full", WidgetSpan(columns: 5, rows: 2)),
-            request("player", WidgetSpan(columns: 3, rows: 2)),
+            request("player", WidgetSpan(columns: 3, rows: 2))
         ])
 
         #expect(placed["full"]?.span == WidgetSpan(columns: 5, rows: 2))
@@ -233,13 +236,13 @@ struct GridPackingTests {
     func fittedPinSticks() {
         let first = board.arrange([
             request("full", WidgetSpan(columns: 5, rows: 2)),
-            request("player", WidgetSpan(columns: 3, rows: 2)),
+            request("player", WidgetSpan(columns: 3, rows: 2))
         ])
         let fitted = first["player"]!
 
         let again = board.arrange([
             request("full", WidgetSpan(columns: 5, rows: 2), at: GridSlot(column: 0, row: 0)),
-            request("player", fitted.span, at: fitted.slot),
+            request("player", fitted.span, at: fitted.slot)
         ])
 
         #expect(again["player"]?.slot == fitted.slot)
@@ -250,13 +253,13 @@ struct GridPackingTests {
     func declaredPinAtFittedCellMisses() {
         let first = board.arrange([
             request("full", WidgetSpan(columns: 5, rows: 2)),
-            request("player", WidgetSpan(columns: 3, rows: 2)),
+            request("player", WidgetSpan(columns: 3, rows: 2))
         ])
         let fitted = first["player"]!
 
         let bounced = board.arrange([
             request("full", WidgetSpan(columns: 5, rows: 2), at: GridSlot(column: 0, row: 0)),
-            request("player", WidgetSpan(columns: 3, rows: 2), at: fitted.slot),
+            request("player", WidgetSpan(columns: 3, rows: 2), at: fitted.slot)
         ])
 
         #expect(bounced["player"]?.span != WidgetSpan(columns: 3, rows: 2))
@@ -268,7 +271,7 @@ struct GridPackingTests {
             request("a", .small, at: GridSlot(column: 0, row: 1)),
             request("b", .small, at: GridSlot(column: 2, row: 1)),
             request("c", .small, at: GridSlot(column: 4, row: 1)),
-            request("player", WidgetSpan(columns: 3, rows: 2)),
+            request("player", WidgetSpan(columns: 3, rows: 2))
         ])
 
         #expect(placed["player"]?.span == WidgetSpan(columns: 3, rows: 1))
@@ -293,7 +296,7 @@ struct GridPackingTests {
         let slot = GridSlot(column: 2, row: 0)
         let placed = board.arrange([
             request("first", .small, at: slot),
-            request("second", .small, at: slot),
+            request("second", .small, at: slot)
         ])
 
         #expect(placed["first"]?.slot == slot)
@@ -310,7 +313,7 @@ struct GridPackingTests {
             request("c", .tall),
             request("d", .small),
             request("e", .small, at: GridSlot(column: 5, row: 1)),
-            request("f", .wide),
+            request("f", .wide)
         ])
 
         let all = Array(placed.values)
@@ -334,108 +337,11 @@ struct GridPackingTests {
         let placed = board.arrange([
             request("a", .large),
             request("b", .wide),
-            request("c", .small),
+            request("c", .small)
         ])
 
         #expect(rects[0] == placed["a"].map(board.rect(for:)))
         #expect(rects[1] == placed["b"].map(board.rect(for:)))
         #expect(rects[2] == placed["c"].map(board.rect(for:)))
-    }
-}
-
-@Suite("Live drop preview")
-struct ArrangePreviewTests {
-    private let board = NotchGrid(columns: 4, rows: 2, cellSize: 72, spacing: 12)
-
-    private func request(_ id: String, _ span: WidgetSpan, at slot: GridSlot? = nil) -> WidgetArrangementRequest {
-        WidgetArrangementRequest(id: id, span: span, preferred: slot)
-    }
-
-    @Test("Moving a widget unpins whoever is sitting in the landing cell")
-    func relocateEvictsTheOccupant() {
-        let origin = [
-            request("held", .small, at: GridSlot(column: 0, row: 0)),
-            request("sitter", .small, at: GridSlot(column: 2, row: 0)),
-            request("other", .small, at: GridSlot(column: 3, row: 0)),
-        ]
-        let relocated = NotchGrid.relocate(
-            origin,
-            moving: "held",
-            to: WidgetPlacement(slot: GridSlot(column: 2, row: 0), span: .small)
-        )
-        let placed = board.arrange(relocated)
-
-        #expect(placed["held"]?.slot == GridSlot(column: 2, row: 0))
-        #expect(placed["sitter"]?.slot == GridSlot(column: 0, row: 0))
-        #expect(placed["other"]?.slot == GridSlot(column: 3, row: 0))
-    }
-
-    @Test("A previewed drop matches the packing a real drop would produce")
-    func previewMatchesCommit() {
-        let origin = [
-            request("held", .wide, at: GridSlot(column: 0, row: 0)),
-            request("blocker", .small, at: GridSlot(column: 2, row: 0)),
-            request("packed", .small),
-        ]
-        let target = WidgetPlacement(slot: GridSlot(column: 1, row: 0), span: .wide)
-        let preview = board.arrange(NotchGrid.relocate(origin, moving: "held", to: target))
-
-        #expect(preview["held"]?.slot == target.slot)
-        #expect(preview["held"]?.span == target.span)
-        #expect(preview["blocker"]?.slot != target.slot)
-        #expect(preview.values.filter { $0.overlaps(target) }.count == 1)
-    }
-
-    @Test("Growing a tile unpins whoever its new span would cover")
-    func relocateGrowsOntoANeighbour() {
-        let origin = [
-            request("held", .small, at: GridSlot(column: 0, row: 0)),
-            request("sitter", .small, at: GridSlot(column: 1, row: 0)),
-        ]
-        let grown = WidgetPlacement(slot: GridSlot(column: 0, row: 0), span: .wide)
-        let placed = board.arrange(NotchGrid.relocate(origin, moving: "held", to: grown))
-
-        #expect(placed["held"] == grown)
-        #expect(placed["sitter"]?.slot != GridSlot(column: 1, row: 0))
-        #expect(placed.values.filter { $0.overlaps(grown) }.count == 1)
-    }
-
-    @Test("Hiding a widget frees its cell for packing")
-    func hidingFreesTheCell() {
-        let origin = [
-            request("gone", .small, at: GridSlot(column: 0, row: 0)),
-            request("waiting", .small),
-        ]
-        let placed = board.arrange(origin.filter { $0.id != "gone" })
-
-        #expect(placed["gone"] == nil)
-        #expect(placed["waiting"]?.slot == GridSlot(column: 0, row: 0))
-    }
-}
-
-@Suite("Placement overlap")
-struct PlacementOverlapTests {
-    private func placement(_ column: Int, _ row: Int, _ span: WidgetSpan) -> WidgetPlacement {
-        WidgetPlacement(slot: GridSlot(column: column, row: row), span: span)
-    }
-
-    @Test("Touching edges do not count as overlapping")
-    func adjacentIsNotOverlapping() {
-        #expect(!placement(0, 0, .small).overlaps(placement(1, 0, .small)))
-        #expect(!placement(0, 0, .small).overlaps(placement(0, 1, .small)))
-    }
-
-    @Test("Spans that share any cell overlap")
-    func sharedCellsOverlap() {
-        #expect(placement(0, 0, .wide).overlaps(placement(1, 0, .small)))
-        #expect(placement(0, 0, .large).overlaps(placement(1, 1, .small)))
-        #expect(placement(0, 0, .small).overlaps(placement(0, 0, .small)))
-    }
-
-    @Test("Overlap is symmetric")
-    func symmetry() {
-        let a = placement(0, 0, .large)
-        let b = placement(1, 1, .wide)
-        #expect(a.overlaps(b) == b.overlaps(a))
     }
 }

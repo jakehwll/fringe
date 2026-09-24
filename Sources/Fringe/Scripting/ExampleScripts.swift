@@ -16,7 +16,7 @@ enum ExampleScripts {
         "weather.js",
         "clock.js",
         "battery.js",
-        "hello.js",
+        "hello.js"
     ]
 
     /// First-launch grants for bundled examples. A gist the user drops in
@@ -25,7 +25,7 @@ enum ExampleScripts {
     static let bundledGrants: [String: [String]] = [
         "nowplaying.js": ["media"],
         "weather.js": ["network"],
-        "battery.js": ["battery"],
+        "battery.js": ["battery"]
     ]
 
     static var all: [Example] {

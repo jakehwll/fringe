@@ -13,6 +13,7 @@ Widget authors: [README.md](README.md). This file is how to build the host.
 make run      # release, bundle, relaunch
 make debug    # unoptimised
 make test
+make lint
 make install  # copy to /Applications
 make stop
 make clean

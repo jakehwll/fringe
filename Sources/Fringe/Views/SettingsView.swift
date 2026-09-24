@@ -41,7 +41,10 @@ private struct GeneralSettingsPane: View {
                         .foregroundStyle(.secondary)
                 }
             } footer: {
-                Text("Measured from the display. On a Mac without a cutout the notch is drawn at a standard size instead.")
+                Text("""
+                    Measured from the display. On a Mac without a cutout \
+                    the notch is drawn at a standard size instead.
+                    """)
             }
 
             Section {
@@ -77,7 +80,11 @@ private struct GridSettingsPane: View {
                 stepper("Rows", value: $settings.rows, range: NotchSettings.rowRange)
             } footer: {
                 let size = settings.grid.contentSize
-                Text("Widgets occupy whole cells. The panel is \(Int(size.width)) × \(Int(size.height)) points at the current cell size.")
+                Text("""
+                    Widgets occupy whole cells. \
+                    The panel is \(Int(size.width)) × \(Int(size.height)) points \
+                    at the current cell size.
+                    """)
             }
 
             Section("Preview") {

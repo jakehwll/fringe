@@ -1,13 +1,16 @@
 APP_NAME := Fringe
 APP_BUNDLE := build/$(APP_NAME).app
 
-.PHONY: app debug run stop test install clean
+.PHONY: app debug run stop test lint install clean
 
 app:
 	@./Scripts/build-app.sh
 
 test:
 	@swift test
+
+lint:
+	@swiftlint lint --strict
 
 debug:
 	@CONFIGURATION=debug ./Scripts/build-app.sh

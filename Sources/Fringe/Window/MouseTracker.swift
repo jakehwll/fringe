@@ -20,7 +20,7 @@ final class MouseTracker {
 
     private static let watchedEvents: NSEvent.EventTypeMask = [
         .mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged,
-        .leftMouseDown, .leftMouseUp,
+        .leftMouseDown, .leftMouseUp
     ]
 
     init(

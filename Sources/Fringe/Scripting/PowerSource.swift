@@ -20,7 +20,7 @@ enum PowerSource {
                 "level": level,
                 "charging": isCharging,
                 "charged": isCharged,
-                "ac": isAC,
+                "ac": isAC
             ]
             if let minutes {
                 value["minutes"] = minutes
@@ -55,12 +55,12 @@ enum PowerSource {
 
         let charging = bool(info[kIOPSIsChargingKey as String])
         let charged = bool(info[kIOPSIsChargedKey as String])
-        let ac = (info[kIOPSPowerSourceStateKey as String] as? String) == (kIOPSACPowerValue as String)
+        let onAC = (info[kIOPSPowerSourceStateKey as String] as? String) == (kIOPSACPowerValue as String)
 
         let minutes: Int?
         if charging {
             minutes = saneMinutes(info[kIOPSTimeToFullChargeKey as String])
-        } else if !ac {
+        } else if !onAC {
             minutes = saneMinutes(info[kIOPSTimeToEmptyKey as String])
         } else {
             minutes = nil
@@ -70,7 +70,7 @@ enum PowerSource {
             level: Double(current) / Double(capacity),
             isCharging: charging,
             isCharged: charged,
-            isAC: ac,
+            isAC: onAC,
             minutes: minutes
         )
     }

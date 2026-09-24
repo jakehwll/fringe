@@ -54,7 +54,7 @@ struct GeometryReportTests {
             settings: settings,
             placements: [
                 "pinned.js": WidgetPlacement(slot: GridSlot(column: 4, row: 1), span: .small),
-                "packed.js": WidgetPlacement(slot: GridSlot(column: 0, row: 0), span: .wide),
+                "packed.js": WidgetPlacement(slot: GridSlot(column: 0, row: 0), span: .wide)
             ],
             unplaced: ["overflow.js"]
         )
@@ -75,7 +75,7 @@ struct GeometryReportTests {
         let snapshot = report(
             stored: [
                 StoredPreference(key: "columns", value: "6", isForeign: false),
-                StoredPreference(key: "simulateNotch", value: "1", isForeign: true),
+                StoredPreference(key: "simulateNotch", value: "1", isForeign: true)
             ]
         )
         #expect(snapshot.plainText.contains("simulateNotch [unknown]: 1"))

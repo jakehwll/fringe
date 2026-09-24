@@ -79,7 +79,7 @@ final class NowPlayingController {
             "duration": snapshot.duration,
             "elapsed": snapshot.elapsed(),
             "progress": snapshot.progress(),
-            "hasArtwork": snapshot.artwork != nil,
+            "hasArtwork": snapshot.artwork != nil
         ]
     }
 

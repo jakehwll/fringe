@@ -174,7 +174,7 @@ final class MediaRemoteAdapterClient {
             resources.script.path,
             resources.framework.path,
             "send",
-            String(command.rawValue),
+            String(command.rawValue)
         ]
         process.standardOutput = Pipe()
         process.standardError = Pipe()

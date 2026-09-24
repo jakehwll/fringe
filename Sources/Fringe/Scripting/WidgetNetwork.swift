@@ -98,10 +98,10 @@ final class WidgetNetwork {
             || host.hasSuffix(".localhost") || host.hasSuffix(".local") {
             return false
         }
-        let ip = host.trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+        let address = host.trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
             .split(separator: "%").first.map(String.init) ?? host
-        if let v4 = IPv4Address(ip) { return isPublicIPv4(v4, spelled: ip) }
-        if let v6 = IPv6Address(ip) { return isPublicIPv6(v6) }
+        if let ipv4 = IPv4Address(address) { return isPublicIPv4(ipv4, spelled: address) }
+        if let ipv6 = IPv6Address(address) { return isPublicIPv6(ipv6) }
         return true
     }
 
@@ -169,7 +169,10 @@ final class WidgetNetwork {
         request.setValue("Fringe/0.1 (widget)", forHTTPHeaderField: "User-Agent")
 
         do {
-            let (data, response, rejected) = try await perform(request)
+            let result = try await perform(request)
+            let data = result.data
+            let response = result.response
+            let rejected = result.rejected
             if rejected {
                 return ["ok": false, "error": "Only public https URLs are allowed"]
             }
@@ -195,13 +198,19 @@ final class WidgetNetwork {
         }
     }
 
-    private static func perform(_ request: URLRequest) async throws -> (Data, URLResponse, Bool) {
+    private struct FetchBody {
+        var data: Data
+        var response: URLResponse
+        var rejected: Bool
+    }
+
+    private static func perform(_ request: URLRequest) async throws -> FetchBody {
         try await withCheckedThrowingContinuation { continuation in
             let box = TaskBox()
             let task = session.dataTask(with: request) { data, response, error in
                 let rejected = box.task.map { PublicInternetGate.shared.consumeRejection($0) } ?? false
                 if rejected {
-                    continuation.resume(returning: (Data(), URLResponse(), true))
+                    continuation.resume(returning: FetchBody(data: Data(), response: URLResponse(), rejected: true))
                     return
                 }
                 if let error {
@@ -212,7 +221,7 @@ final class WidgetNetwork {
                     continuation.resume(throwing: URLError(.badServerResponse))
                     return
                 }
-                continuation.resume(returning: (data, response, false))
+                continuation.resume(returning: FetchBody(data: data, response: response, rejected: false))
             }
             box.task = task
             task.resume()
@@ -239,8 +248,8 @@ final class WidgetNetwork {
         let octets = Array(bytes)
         guard octets.count == 4 else { return false }
         let spelled = octets.map(String.init).joined(separator: ".")
-        guard let v4 = IPv4Address(spelled) else { return false }
-        return isPublicIPv4(v4, spelled: spelled)
+        guard let ipv4 = IPv4Address(spelled) else { return false }
+        return isPublicIPv4(ipv4, spelled: spelled)
     }
 
     /// Also unwraps NAT64, 6to4, Teredo, and deprecated IPv4-compatible
@@ -283,10 +292,8 @@ final class WidgetNetwork {
         var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
         guard getnameinfo(addr, length, &host, socklen_t(host.count), nil, 0, NI_NUMERICHOST) == 0
         else { return false }
-        let numeric = String(
-            decoding: host.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) },
-            as: UTF8.self
-        )
+        let bytes = host.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }
+        guard let numeric = String(bytes: bytes, encoding: .utf8) else { return false }
         return isPublicInternetHost(numeric)
     }
 

@@ -136,7 +136,7 @@ struct BoardArrangement {
 /// Live drop the board is previewing. Packing uses this instead of the
 /// stored pin so neighbours can slide into the holes a drag is about to make.
 enum BoardProposal: Equatable {
-    case moving(id: String, to: WidgetPlacement)
+    case moving(id: String, placement: WidgetPlacement)
     /// Off the panel; dropping will hide it.
     case hiding(id: String)
 

@@ -42,6 +42,13 @@ struct IslandClaim: Equatable {
     }
 }
 
+/// One widget's bid for the collapsed wings.
+struct IslandCandidate: Equatable {
+    var id: String
+    var enabled: Bool
+    var claim: IslandClaim?
+}
+
 /// The claim that currently owns the collapsed wings.
 struct IslandOccupancy: Equatable {
     var widgetID: String
@@ -49,9 +56,7 @@ struct IslandOccupancy: Equatable {
 }
 
 extension IslandOccupancy {
-    static func resolve(
-        from widgets: [(id: String, enabled: Bool, claim: IslandClaim?)]
-    ) -> IslandOccupancy? {
+    static func resolve(from widgets: [IslandCandidate]) -> IslandOccupancy? {
         widgets
             .filter(\.enabled)
             .compactMap { widget in
@@ -77,7 +82,7 @@ struct IslandScriptContext: Equatable {
             "pulse": pulse,
             "hover": hover,
             "side": Double(side),
-            "wing": Double(wing),
+            "wing": Double(wing)
         ]
     }
 }

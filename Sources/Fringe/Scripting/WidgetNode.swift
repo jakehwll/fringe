@@ -163,134 +163,159 @@ extension WidgetNode {
               let type = object["type"] as? String
         else { return nil }
 
+        return content(type, object) ?? container(type, object, depth: depth)
+    }
+
+    private static func content(_ type: String, _ object: [AnyHashable: Any]) -> WidgetNode? {
         switch type {
-        case "text":
-            guard var text = object["value"] as? String else { return nil }
-            if text.count > maxTextCharacters {
-                text = String(text.prefix(maxTextCharacters))
-            }
-            return .text(
-                TextNode(
-                    value: text,
-                    size: clamped(number(object["size"]), 8...96, default: 13),
-                    weight: object["weight"] as? String ?? "regular",
-                    opacity: Double(clamped(number(object["opacity"]), 0...1, default: 1)),
-                    color: object["color"] as? String,
-                    monospaced: object["monospaced"] as? Bool ?? false,
-                    lines: min(max((object["lines"] as? NSNumber)?.intValue ?? 2, 1), 8),
-                    align: object["align"] as? String,
-                    truncate: object["truncate"] as? Bool ?? false
-                )
-            )
-
-        case "symbol":
-            guard let name = object["name"] as? String else { return nil }
-            return .symbol(
-                SymbolNode(
-                    name: name,
-                    size: clamped(number(object["size"]), 8...96, default: 14),
-                    opacity: Double(clamped(number(object["opacity"]), 0...1, default: 1)),
-                    color: object["color"] as? String,
-                    secondary: object["secondary"] as? String,
-                    tertiary: object["tertiary"] as? String,
-                    rendering: object["rendering"] as? String,
-                    fit: object["fit"] as? Bool ?? false
-                )
-            )
-
-        case "stack":
-            let children = (object["children"] as? [Any] ?? [])
-                .prefix(maxChildren)
-                .compactMap { WidgetNode.parse($0, depth: depth + 1) }
-            return .stack(
-                StackNode(
-                    axis: StackNode.Axis(rawValue: object["axis"] as? String ?? "") ?? .vertical,
-                    spacing: clamped(number(object["spacing"]), 0...24, default: 4),
-                    alignment: object["alignment"] as? String ?? "center",
-                    padding: clamped(number(object["padding"]), 0...24, default: 0),
-                    children: Array(children)
-                )
-            )
-
-        case "progress":
-            return .progress(
-                ProgressNode(
-                    value: Double(number(object["value"]) ?? 0).clamped(to: 0...1),
-                    color: object["color"] as? String,
-                    height: clamped(number(object["height"]), 1...16, default: 4)
-                )
-            )
-
-        case "artwork":
-            return .artwork(
-                ArtworkNode(
-                    blurred: object["blurred"] as? Bool ?? false,
-                    cornerRadius: clamped(number(object["corner"]), 0...40, default: 8),
-                    opacity: Double(clamped(number(object["opacity"]), 0...1, default: 1)),
-                    size: number(object["size"]).map { clamped($0, 8...160, default: $0) },
-                    fill: object["fill"] as? Bool ?? false,
-                    dim: Double(number(object["dim"]) ?? 0).clamped(to: 0...1)
-                )
-            )
-
-        case "button":
-            guard let action = object["action"] as? String,
-                  let child = WidgetNode.parse(object["child"], depth: depth + 1)
-            else { return nil }
-            return .button(
-                ButtonNode(
-                    action: action,
-                    padding: clamped(number(object["padding"]), 0...24, default: 6),
-                    child: child
-                )
-            )
-
-        case "spacer":
-            return .spacer(number(object["length"]).map { clamped($0, 0...80, default: $0) })
-
-        case "list":
-            let items = (object["items"] as? [Any] ?? []).prefix(maxListItems).compactMap { raw -> ListNode.Item? in
-                guard let row = raw as? [AnyHashable: Any],
-                      let title = row["title"] as? String
-                else { return nil }
-                return ListNode.Item(
-                    title: String(title.prefix(maxTextCharacters)),
-                    subtitle: (row["subtitle"] as? String).map { String($0.prefix(maxTextCharacters)) },
-                    symbol: row["symbol"] as? String,
-                    value: (row["value"] as? String).map { String($0.prefix(maxTextCharacters)) },
-                    color: row["color"] as? String,
-                    secondary: row["secondary"] as? String,
-                    tertiary: row["tertiary"] as? String,
-                    rendering: row["rendering"] as? String
-                )
-            }
-            return .list(ListNode(items: Array(items)))
-
-        case "chart":
-            let values = (object["values"] as? [Any] ?? [])
-                .prefix(maxChartValues)
-                .compactMap { number($0).map(Double.init) }
-            return .chart(
-                ChartNode(
-                    values: Array(values),
-                    kind: ChartNode.Kind(rawValue: object["kind"] as? String ?? "") ?? .line,
-                    color: object["color"] as? String,
-                    height: clamped(number(object["height"]), 8...80, default: 28),
-                    fill: object["fill"] as? Bool ?? false
-                )
-            )
-
-        case "equaliser":
-            return .equaliser(
-                EqualiserNode(
-                    playing: object["playing"] as? Bool ?? false,
-                    size: number(object["size"]).map { clamped($0, 8...80, default: $0) }
-                )
-            )
-
-        default:
-            return nil
+        case "text": return text(object)
+        case "symbol": return symbol(object)
+        case "progress": return progress(object)
+        case "artwork": return artwork(object)
+        case "spacer": return .spacer(number(object["length"]).map { clamped($0, 0...80, default: $0) })
+        case "equaliser": return equaliser(object)
+        default: return nil
         }
+    }
+
+    private static func container(_ type: String, _ object: [AnyHashable: Any], depth: Int) -> WidgetNode? {
+        switch type {
+        case "stack": return stack(object, depth: depth)
+        case "button": return button(object, depth: depth)
+        case "list": return list(object)
+        case "chart": return chart(object)
+        default: return nil
+        }
+    }
+
+    private static func text(_ object: [AnyHashable: Any]) -> WidgetNode? {
+        guard var text = object["value"] as? String else { return nil }
+        if text.count > maxTextCharacters {
+            text = String(text.prefix(maxTextCharacters))
+        }
+        return .text(
+            TextNode(
+                value: text,
+                size: clamped(number(object["size"]), 8...96, default: 13),
+                weight: object["weight"] as? String ?? "regular",
+                opacity: Double(clamped(number(object["opacity"]), 0...1, default: 1)),
+                color: object["color"] as? String,
+                monospaced: object["monospaced"] as? Bool ?? false,
+                lines: min(max((object["lines"] as? NSNumber)?.intValue ?? 2, 1), 8),
+                align: object["align"] as? String,
+                truncate: object["truncate"] as? Bool ?? false
+            )
+        )
+    }
+
+    private static func symbol(_ object: [AnyHashable: Any]) -> WidgetNode? {
+        guard let name = object["name"] as? String else { return nil }
+        return .symbol(
+            SymbolNode(
+                name: name,
+                size: clamped(number(object["size"]), 8...96, default: 14),
+                opacity: Double(clamped(number(object["opacity"]), 0...1, default: 1)),
+                color: object["color"] as? String,
+                secondary: object["secondary"] as? String,
+                tertiary: object["tertiary"] as? String,
+                rendering: object["rendering"] as? String,
+                fit: object["fit"] as? Bool ?? false
+            )
+        )
+    }
+
+    private static func stack(_ object: [AnyHashable: Any], depth: Int) -> WidgetNode {
+        let children = (object["children"] as? [Any] ?? [])
+            .prefix(maxChildren)
+            .compactMap { WidgetNode.parse($0, depth: depth + 1) }
+        return .stack(
+            StackNode(
+                axis: StackNode.Axis(rawValue: object["axis"] as? String ?? "") ?? .vertical,
+                spacing: clamped(number(object["spacing"]), 0...24, default: 4),
+                alignment: object["alignment"] as? String ?? "center",
+                padding: clamped(number(object["padding"]), 0...24, default: 0),
+                children: Array(children)
+            )
+        )
+    }
+
+    private static func progress(_ object: [AnyHashable: Any]) -> WidgetNode {
+        .progress(
+            ProgressNode(
+                value: Double(number(object["value"]) ?? 0).clamped(to: 0...1),
+                color: object["color"] as? String,
+                height: clamped(number(object["height"]), 1...16, default: 4)
+            )
+        )
+    }
+
+    private static func artwork(_ object: [AnyHashable: Any]) -> WidgetNode {
+        .artwork(
+            ArtworkNode(
+                blurred: object["blurred"] as? Bool ?? false,
+                cornerRadius: clamped(number(object["corner"]), 0...40, default: 8),
+                opacity: Double(clamped(number(object["opacity"]), 0...1, default: 1)),
+                size: number(object["size"]).map { clamped($0, 8...160, default: $0) },
+                fill: object["fill"] as? Bool ?? false,
+                dim: Double(number(object["dim"]) ?? 0).clamped(to: 0...1)
+            )
+        )
+    }
+
+    private static func button(_ object: [AnyHashable: Any], depth: Int) -> WidgetNode? {
+        guard let action = object["action"] as? String,
+              let child = WidgetNode.parse(object["child"], depth: depth + 1)
+        else { return nil }
+        return .button(
+            ButtonNode(
+                action: action,
+                padding: clamped(number(object["padding"]), 0...24, default: 6),
+                child: child
+            )
+        )
+    }
+
+    private static func list(_ object: [AnyHashable: Any]) -> WidgetNode {
+        let items = (object["items"] as? [Any] ?? []).prefix(maxListItems).compactMap { raw -> ListNode.Item? in
+            guard let row = raw as? [AnyHashable: Any],
+                  let title = row["title"] as? String
+            else { return nil }
+            return ListNode.Item(
+                title: String(title.prefix(maxTextCharacters)),
+                subtitle: (row["subtitle"] as? String).map { String($0.prefix(maxTextCharacters)) },
+                symbol: row["symbol"] as? String,
+                value: (row["value"] as? String).map { String($0.prefix(maxTextCharacters)) },
+                color: row["color"] as? String,
+                secondary: row["secondary"] as? String,
+                tertiary: row["tertiary"] as? String,
+                rendering: row["rendering"] as? String
+            )
+        }
+        return .list(ListNode(items: Array(items)))
+    }
+
+    private static func chart(_ object: [AnyHashable: Any]) -> WidgetNode {
+        let values = (object["values"] as? [Any] ?? [])
+            .prefix(maxChartValues)
+            .compactMap { number($0).map(Double.init) }
+        return .chart(
+            ChartNode(
+                values: Array(values),
+                kind: ChartNode.Kind(rawValue: object["kind"] as? String ?? "") ?? .line,
+                color: object["color"] as? String,
+                height: clamped(number(object["height"]), 8...80, default: 28),
+                fill: object["fill"] as? Bool ?? false
+            )
+        )
+    }
+
+    private static func equaliser(_ object: [AnyHashable: Any]) -> WidgetNode {
+        .equaliser(
+            EqualiserNode(
+                playing: object["playing"] as? Bool ?? false,
+                size: number(object["size"]).map { clamped($0, 8...80, default: $0) }
+            )
+        )
     }
 
     /// JavaScript numbers arrive as `NSNumber`, but a script may equally hand back
@@ -301,7 +326,11 @@ extension WidgetNode {
         return nil
     }
 
-    private static func clamped(_ value: CGFloat?, _ range: ClosedRange<CGFloat>, default fallback: CGFloat) -> CGFloat {
+    private static func clamped(
+        _ value: CGFloat?,
+        _ range: ClosedRange<CGFloat>,
+        default fallback: CGFloat
+    ) -> CGFloat {
         guard let value, value.isFinite else { return fallback }
         return min(max(value, range.lowerBound), range.upperBound)
     }

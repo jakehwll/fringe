@@ -1,0 +1,11 @@
+included:
+  - Sources
+  - Tests
+
+excluded:
+  - .build
+  - build
+
+# A session type keeps its kind enum one level inside it.
+nesting:
+  type_level: 2

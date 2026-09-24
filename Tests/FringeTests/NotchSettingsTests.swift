@@ -26,7 +26,7 @@ struct NotchSettingsTests {
             "columns": 8,
             "rows": 3,
             "widgetOrder": ["b.js", "a.js"],
-            "disabledWidgets": ["c.js"],
+            "disabledWidgets": ["c.js"]
         ]))
 
         #expect(settings.columns == 8)
@@ -40,7 +40,7 @@ struct NotchSettingsTests {
     @Test("Out-of-range stored values are clamped on load", arguments: [
         (stored: 99, expected: 10),
         (stored: 0, expected: 3),
-        (stored: -5, expected: 3),
+        (stored: -5, expected: 3)
     ])
     func clampsColumns(stored: Int, expected: Int) {
         let settings = NotchSettings(defaults: scratchDefaults(["columns": stored]))
@@ -166,7 +166,7 @@ struct NotchSettingsTests {
     @Test("Stored grants win over the bundled defaults")
     func storedGrantsWin() {
         let settings = NotchSettings(defaults: scratchDefaults([
-            "widgetCapabilityGrants": ["weather.js": ["network"] as Any, "gist.js": ["media"]],
+            "widgetCapabilityGrants": ["weather.js": ["network"] as Any, "gist.js": ["media"]]
         ]))
         #expect(settings.grantedCapabilities(for: "weather.js").network)
         #expect(settings.grantedCapabilities(for: "gist.js").media)
@@ -209,7 +209,7 @@ struct PreferenceInventoryTests {
         let entries = NotchSettings.inventory(of: [
             "columns": 6,
             "rows": 2,
-            "widgetOrder": ["a.js"],
+            "widgetOrder": ["a.js"]
         ])
         #expect(entries.map(\.key) == ["columns", "rows", "widgetOrder"])
         #expect(entries.allSatisfy { !$0.isForeign })
@@ -222,7 +222,7 @@ struct PreferenceInventoryTests {
     func retiredKeyIsForeign() {
         let entries = NotchSettings.inventory(of: [
             "columns": 6,
-            "simulateNotch": true,
+            "simulateNotch": true
         ])
         let stray = entries.first { $0.key == "simulateNotch" }
         #expect(stray?.isForeign == true)
@@ -235,7 +235,7 @@ struct PreferenceInventoryTests {
             "AppleLanguages": ["en"],
             "NSInitialToolTipDelay": 0,
             "com.apple.something": 1,
-            "columns": 6,
+            "columns": 6
         ])
         #expect(entries.map(\.key) == ["columns"])
     }

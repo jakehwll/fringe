@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:fringe}",
+            "name": "Debug Fringe",
+            "target": "Fringe",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug Fringe"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:fringe}",
+            "name": "Release Fringe",
+            "target": "Fringe",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release Fringe"
+        }
+    ]
+}

@@ -34,7 +34,10 @@ struct DebugSettingsPane: View {
 
                 section("Grid") {
                     row("Cells", "\(report.columns) × \(report.rows)")
-                    row("Cell / gutter", "\(GeometryReport.number(report.cellSize)) / \(GeometryReport.number(report.spacing)) pt")
+                    row(
+                        "Cell / gutter",
+                        "\(GeometryReport.number(report.cellSize)) / \(GeometryReport.number(report.spacing)) pt"
+                    )
                     row("Board", GeometryReport.format(report.boardSize))
                     row("Board origin", GeometryReport.format(report.boardOrigin))
                 }

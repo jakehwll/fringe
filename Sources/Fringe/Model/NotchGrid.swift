@@ -112,11 +112,11 @@ struct NotchGrid: Equatable {
         rowRange: ClosedRange<Int>
     ) -> (columns: Int, rows: Int) {
         let stride = cellSize + spacing
-        let dc = Int((translation.width / (stride / 2)).rounded())
-        let dr = Int((translation.height / stride).rounded())
+        let columnDelta = Int((translation.width / (stride / 2)).rounded())
+        let rowDelta = Int((translation.height / stride).rounded())
         return (
-            columnRange.clamping(columns + dc),
-            rowRange.clamping(rows + dr)
+            columnRange.clamping(columns + columnDelta),
+            rowRange.clamping(rows + rowDelta)
         )
     }
 
@@ -309,8 +309,8 @@ struct GridOccupancy {
     }
 
     private func isFree(_ column: Int, _ row: Int, _ span: WidgetSpan) -> Bool {
-        for r in row..<(row + span.rows) {
-            for c in column..<(column + span.columns) where taken[r][c] {
+        for rowIndex in row..<(row + span.rows) {
+            for columnIndex in column..<(column + span.columns) where taken[rowIndex][columnIndex] {
                 return false
             }
         }
@@ -318,9 +318,9 @@ struct GridOccupancy {
     }
 
     private mutating func fill(_ column: Int, _ row: Int, _ span: WidgetSpan) {
-        for r in row..<(row + span.rows) {
-            for c in column..<(column + span.columns) {
-                taken[r][c] = true
+        for rowIndex in row..<(row + span.rows) {
+            for columnIndex in column..<(column + span.columns) {
+                taken[rowIndex][columnIndex] = true
             }
         }
     }
