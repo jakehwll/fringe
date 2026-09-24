@@ -15,33 +15,6 @@ function tint(percent, plugged, low) {
   return undefined;
 }
 
-/**
- * @param {number} percent
- * @param {boolean} plugged
- * @param {boolean} charged
- * @param {string} [colour]
- * @param {number} size
- * @returns {WidgetNode}
- */
-function icon(percent, plugged, charged, colour, size) {
-  if (plugged && (charged || percent > 85)) {
-    return symbol("battery.100percent.bolt", {
-      size: size, opacity: 0.9, color: colour || "#30d158"
-    });
-  }
-  var battery = symbol(glyph(percent), {
-    size: size, opacity: 0.9, color: colour
-  });
-  if (!plugged) return battery;
-  return hstack([
-    battery,
-    symbol("bolt.fill", {
-      size: Math.round(size * 0.7),
-      color: colour || "#30d158"
-    })
-  ], { spacing: 3, alignment: "center" });
-}
-
 function duration(minutes) {
   if (minutes == null || minutes < 0) return null;
   minutes = Math.round(minutes);
@@ -67,25 +40,34 @@ function status(power, minutes, percent, low) {
 }
 
 /**
+ * @param {(WidgetNode | null | undefined)[]} nodes
+ * @returns {WidgetNode[]}
+ */
+function filled(nodes) {
+  var kept = [];
+  for (var i = 0; i < nodes.length; i++) {
+    if (nodes[i]) kept.push(nodes[i]);
+  }
+  return kept;
+}
+
+/**
+ * One box for every state. The bolt is drawn inside it — a bolt beside
+ * the glyph changes width when the charger connects and the percentage
+ * slides over. `fit` holds the wide battery symbol in that same box.
  * @param {number} percent
+ * @param {boolean} plugged
  * @param {string | undefined} colour
  * @param {number} size
  * @returns {WidgetNode}
  */
-function figure(percent, colour, size) {
-  return text(percent + "%", {
-    size: size,
-    weight: "medium",
-    color: colour
-  });
-}
-
-/**
- * @param {string} label
- * @returns {WidgetNode}
- */
-function caption(label) {
-  return text(label, { size: 11, opacity: 0.55, lines: 1, truncate: true });
+function mark(percent, plugged, colour, size) {
+  var battery = symbol(glyph(percent), { size: size, fit: true, color: colour });
+  if (!plugged) return battery;
+  return zstack([
+    battery,
+    symbol("bolt.fill", { size: Math.round(size * 0.4), color: "#ffffff" })
+  ]);
 }
 
 /**
@@ -132,53 +114,49 @@ widget({
     if (!state) {
       return vstack([
         symbol("powerplug.fill", { size: 16, opacity: 0.45 }),
-        text("No battery", { size: 11, opacity: 0.5 })
+        text("No battery", { size: 11, opacity: 0.5, align: "center", lines: 1 })
       ], { spacing: 6 });
     }
 
-    var percent = state.percent;
-    var plugged = state.plugged;
-    var colour = state.colour;
-    var power = state.power;
-    var showPercent = notch.setting("percent") !== false;
-    var showTime = notch.setting("time") !== false;
-    var minutes = showTime ? duration(power.minutes) : null;
-    var label = status(power, minutes, percent, state.low);
-    var columns = (ctx && ctx.columns) || 1;
-    var rows = (ctx && ctx.rows) || 1;
-    var wide = columns >= 2;
-    var tall = rows >= 2;
-    var bar = progress(power.level, { color: colour, height: 4 });
-    var note = caption(label);
-    var mark = icon(percent, plugged, power.charged, colour, tall ? 26 : 22);
-    var number = showPercent ? figure(percent, colour, wide || tall ? 22 : 20) : null;
+    var wide = ((ctx && ctx.columns) || 1) >= 2;
+    var tall = ((ctx && ctx.rows) || 1) >= 2;
+    // Default cell is 72pt with 8pt of widget padding: 56pt of content.
+    // Icon, percentage, and the bar already fill that. The caption only
+    // appears once a second column or row exists.
+    var align = wide ? "leading" : "center";
+    var minutes = notch.setting("time") !== false ? duration(state.power.minutes) : null;
 
-    // 1×1: the bolt is the state. A caption like "Almost full" just
-    // narrates the glyph and crowds the cell — skip it here.
-    if (!wide && !tall) {
-      var compact = [mark];
-      if (number) compact.push(number);
-      compact.push(spacer(), bar);
-      return vstack(compact, { spacing: 6 });
-    }
+    var badge = mark(state.percent, state.plugged, state.colour, 22);
+    var number = notch.setting("percent") === false ? null : text(state.percent + "%", {
+      size: 16,
+      weight: "medium",
+      color: state.colour,
+      align: align,
+      lines: 1
+    });
+    var note = (wide || tall) ? text(status(state.power, minutes, state.percent, state.low), {
+      size: 11,
+      opacity: 0.55,
+      align: align,
+      lines: 1,
+      truncate: true
+    }) : null;
+    var lines = filled([number, note]);
 
-    if (wide) {
-      var copy = [];
-      if (number) copy.push(number);
-      copy.push(note);
-      var body = number
-        ? hstack([
-            mark,
-            vstack(copy, { spacing: 3, alignment: "leading" })
-          ], { spacing: 10, alignment: "center" })
-        : hstack([mark, note], { spacing: 10, alignment: "center" });
-      return vstack([body, spacer(), bar], { spacing: 0 });
-    }
+    var header = wide
+      ? hstack(filled([
+          badge,
+          lines.length ? vstack(lines, { spacing: 1, alignment: "leading" }) : null
+        ]), { spacing: 8, alignment: "center" })
+      : vstack(filled([badge, number, note]), { spacing: 2, alignment: "center" });
 
-    var stack = [mark];
-    if (number) stack.push(number);
-    stack.push(note, spacer(), bar);
-    return vstack(stack, { spacing: 8 });
+    // Fixed 4pt keeps the bar off the type in a 1-row cell. The flexible
+    // spacer takes whatever a taller cell adds, so the bar stays put
+    // instead of the whole stack spreading out.
+    return vstack([header, spacer(), spacer(4), progress(state.power.level, {
+      color: state.colour,
+      height: 3
+    })], { spacing: 0, alignment: align });
   },
   // Collapsed wings. `null` leaves them to someone else (or empty).
   // Priority is how we steal from now-playing: critical outranks a
@@ -193,29 +171,21 @@ widget({
 
     var percent = state.percent;
     var plugged = state.plugged;
-    var power = state.power;
     var critical = !plugged && percent <= 10;
     var goingFlat = !plugged && percent <= state.low;
     var pulse = !!(ctx && ctx.pulse);
     if (!critical && !goingFlat && !pulse) return null;
 
-    var colour = state.colour;
     var side = (ctx && ctx.side) || 20;
-    var mark = (plugged && (power.charged || percent > 85))
-      ? "battery.100percent.bolt"
-      : glyph(percent);
-    // Same class of mark as play/pause — a glyph in the wing, not the
-    // album-art square. `fit` keeps the wide battery inside that box.
-    var markSize = Math.round(side * 0.85);
     return {
       priority: critical ? 100 : pulse ? 80 : 20,
-      left: symbol(mark, { size: markSize, fit: true, color: colour }),
+      left: mark(percent, plugged, state.colour, Math.round(side * 0.85)),
       right: text(percent + "%", {
         size: Math.round(side * 0.62),
         weight: "semibold",
         monospaced: true,
         lines: 1,
-        color: colour
+        color: state.colour
       })
     };
   }
