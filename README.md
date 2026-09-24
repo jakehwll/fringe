@@ -6,6 +6,8 @@ Drop a `.js` file in and it shows up. Network and media stay off until you
 allow them in Settings. On a display without a notch it draws a stand-in, so
 it behaves the same everywhere.
 
+<video src="https://github.com/jakehwll/fringe/raw/main/.github/assets/preview.mp4" width="100%" autoplay muted loop playsinline></video>
+
 ## Run
 
 macOS 14+, Swift 6. The Command Line Tools are enough.
